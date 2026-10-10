@@ -140,26 +140,23 @@ export async function initializeDatabase() {
 }
 
 function postgresSql(sql) {
+  let parameterIndex = 0;
   return sql.replace(/email\s*=\s*\?\s+COLLATE NOCASE/gi, 'LOWER(email)=LOWER(?)')
     .replace(/ORDER BY\s+([\w.]+)\s+COLLATE NOCASE/gi, 'ORDER BY LOWER($1)')
-    .replace(/\?/g, () => `$${++postgresSql.parameterIndex}`);
+    .replace(/\?/g, () => `$${++parameterIndex}`);
 }
-postgresSql.parameterIndex = 0;
 
 export const db = {
   async get(sql, ...params) {
     if (!postgresUrl) return sqlite.prepare(sql).get(...params);
-    postgresSql.parameterIndex = 0;
     return (await pool.query(postgresSql(sql), params)).rows[0];
   },
   async all(sql, ...params) {
     if (!postgresUrl) return sqlite.prepare(sql).all(...params);
-    postgresSql.parameterIndex = 0;
     return (await pool.query(postgresSql(sql), params)).rows;
   },
   async run(sql, ...params) {
     if (!postgresUrl) return sqlite.prepare(sql).run(...params);
-    postgresSql.parameterIndex = 0;
     const result = await pool.query(postgresSql(sql), params);
     return { changes: result.rowCount };
   },
