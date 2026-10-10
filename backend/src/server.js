@@ -303,14 +303,22 @@ app.post('/api/leave-requests', auth, role('employee'), async (req, res, next) =
     if (typeof reason !== 'string' || reason.trim().length < 5 || reason.trim().length > 500) return res.status(400).json({ error: 'Add a reason between 5 and 500 characters.' });
     const days = weekdays(startDate, endDate);
     if (!days) return res.status(400).json({ error: 'Choose at least one weekday.' });
-    const collision = await db.get("SELECT status FROM leave_requests WHERE employee_id=? AND status IN('Pending','Approved') AND start_date<=? AND end_date>=? LIMIT 1", req.user.id, endDate, startDate);
-    if (collision) return res.status(409).json({ error: `These dates overlap a ${collision.status.toLowerCase()} request.` });
-    if (type === 'Annual leave') {
-      const used = Number((await db.get("SELECT COALESCE(SUM(days),0) AS days FROM leave_requests WHERE employee_id=? AND leave_type='Annual leave' AND status IN('Pending','Approved')", req.user.id)).days);
-      if (used + days > req.user.leaveDays) return res.status(400).json({ error: `This request exceeds your remaining annual leave (${Math.max(0, req.user.leaveDays - used)} days).` });
-    }
     const id = randomUUID();
-    await db.run("INSERT INTO leave_requests(id,employee_id,manager_id,leave_type,start_date,end_date,days,reason,submitted_at) VALUES(?,?,?,?,?,?,?,?,?)", id, req.user.id, req.user.managerId, type, startDate, endDate, days, reason.trim(), new Date().toISOString());
+    const validation = await withTransaction(async tx => {
+      // SQLite's BEGIN IMMEDIATE already serializes writers. Lock the employee row
+      // in Postgres so simultaneous submissions cannot both pass the overlap or
+      // annual allowance checks.
+      if (databaseKind === 'postgres') await tx.get('SELECT id FROM users WHERE id=? FOR UPDATE', req.user.id);
+      const collision = await tx.get("SELECT status FROM leave_requests WHERE employee_id=? AND status IN('Pending','Approved') AND start_date<=? AND end_date>=? LIMIT 1", req.user.id, endDate, startDate);
+      if (collision) return { error: `These dates overlap a ${collision.status.toLowerCase()} request.`, status: 409 };
+      if (type === 'Annual leave') {
+        const used = Number((await tx.get("SELECT COALESCE(SUM(days),0) AS days FROM leave_requests WHERE employee_id=? AND leave_type='Annual leave' AND status IN('Pending','Approved')", req.user.id)).days);
+        if (used + days > req.user.leaveDays) return { error: `This request exceeds your remaining annual leave (${Math.max(0, req.user.leaveDays - used)} days).`, status: 400 };
+      }
+      await tx.run("INSERT INTO leave_requests(id,employee_id,manager_id,leave_type,start_date,end_date,days,reason,submitted_at) VALUES(?,?,?,?,?,?,?,?,?)", id, req.user.id, req.user.managerId, type, startDate, endDate, days, reason.trim(), new Date().toISOString());
+      return null;
+    });
+    if (validation) return res.status(validation.status).json({ error: validation.error });
     const manager = await db.get('SELECT * FROM users WHERE id=?', req.user.managerId);
     const range = startDate === endDate ? startDate : `${startDate} to ${endDate}`;
     const message = `${req.user.name} requested ${type} for ${range} (${days} working days). Reason: ${reason.trim()}`;

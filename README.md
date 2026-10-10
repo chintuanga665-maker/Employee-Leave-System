@@ -1,19 +1,19 @@
 # Employee Leave Management System (ELMS)
 
-A beginner-friendly college project based on the supplied mini-project report. Managers create an organization workspace and share employee or manager invite codes. Employees join a workspace before choosing a manager, and each organization's requests and people are kept separate. The app stores its data in a local SQL database and has integration points for email and WhatsApp notifications.
+A beginner-friendly college project based on the supplied mini-project report. Managers create an organization workspace and share employee or manager invite codes. Employees join a workspace before choosing a manager, and each organization's requests and people are kept separate. Local development uses SQLite; hosted deployments can use PostgreSQL. Email and WhatsApp notifications are optional integrations.
 
 ## Technologies used
 
 - **React** for interactive screens
 - **HTML (JSX) and CSS** for page structure and responsive design
 - **JavaScript with Node.js and Express** for the server and application rules
-- **SQLite SQL database** for employee, manager, session, leave, and notification tables
+- **SQLite or PostgreSQL** for employee, manager, session, leave, and notification tables
 - **Authenticated WebSocket** updates so connected dashboards refresh when requests change
 - **Gmail, Resend, and Meta WhatsApp Cloud API** adapters for notifications after credentials are configured
 
 ## Requirements
 
-- Node.js 25.7 or newer (Node 26 recommended for its built-in SQLite module)
+- Node.js 24 or newer (the SQLite fallback uses Node's built-in `node:sqlite` module)
 - npm
 
 ## Run from VS Code
@@ -36,15 +36,15 @@ The frontend also opens an authenticated WebSocket to the API. When a leave requ
 4. Create an **Employee** account, enter the employee code, choose **Find my workspace**, then select that workspace's manager.
 5. Sign in as the employee and submit a leave request. The app counts Monday–Friday as leave days and checks overlapping requests and annual leave allowance.
 6. Sign out and sign in as the manager to approve or reject the request.
-7. Both roles can see the email status for their side of the workflow. Employees can retry a failed manager notification from **My requests**; managers cacan retry a failed decision email from **Approvals → Recent decisions**. Retrying does not create another leave request.
+7. Both roles can see the email status for their side of the workflow. Employees can retry a failed manager notification from **My requests**; managers can retry a failed decision email from **Approvals → Recent decisions**. Retrying does not create another leave request.
 
-Managers can share the separate manager invite code with trusted managers. Treat both workspace codes as private, especially the manager code. Existing local accounts are automatically grouped into a **College project workspace** when the database is upgraded; its invite codes appear in the manshoager's **My team** page.
+Managers can share the separate manager invite code with trusted managers. Treat both workspace codes as private, especially the manager code. Existing local accounts are automatically grouped into a **College project workspace** when the database is upgraded; its invite codes appear on the manager's **My team** page.
 
 Use phone numbers with a leading country code, such as `+91 9876543210`. The database is created automatically at `backend/data/elms.sqlite` and remains on this computer between runs.
 
 ## Using multiple workspaces
 
-Each workspace has its own employees, managers, leave requests, and generated invitation codes. The app checks the invite code and selected manager on the server, so an employee cannot join a different workspace by changing the browser form. Keep invite codes private. The current app is prepared for multiple workspaces on one server; larger deployments with multiple server instances should move from local SQLite to a managed shared database such as PostgreSQL or MySQL.
+Each workspace has its own employees, managers, leave requests, and generated invitation codes. The app checks the invite code and selected manager on the server, so an employee cannot join a different workspace by changing the browser form. Keep invite codes private. PostgreSQL is supported for hosted deployments. Keep the realtime backend on one instance; multiple backend instances need a shared realtime service before scaling horizontally.
 
 For a private online demo, build the frontend with `npm run build`, set `NODE_ENV=production` and `HOST=0.0.0.0` on the server, and start the backend with `npm start`. The hosting service must provide a persistent disk for `backend/data/elms.sqlite` and HTTPS in front of the app. The development server itself is not a public website. Before opening registration broadly, add email verification and abuse protections, and replace any demo provider credentials with private production credentials.
 
