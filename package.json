@@ -1,0 +1,28 @@
+{
+  "name": "employee-leave-management-system",
+  "private": true,
+  "version": "1.0.0",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n API,WEB -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
+    "dev:reset": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/restart-elms.ps1",
+    "dev:frontend": "npm --workspace frontend run dev",
+    "dev:backend": "npm --workspace backend run dev",
+    "build": "npm --workspace frontend run build",
+    "reset-password": "npm --workspace backend run reset-password",
+    "migrate:postgres": "npm --workspace backend run migrate:postgres",
+    "start": "npm --workspace backend start"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "allowScripts": {
+    "esbuild@0.25.12": true
+  }
+}

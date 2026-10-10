@@ -1,0 +1,5 @@
+node_modules/
+frontend/dist/
+backend/.env
+backend/data/*.sqlite*
+backend/data/*.bak

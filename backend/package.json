@@ -1,0 +1,21 @@
+{
+  "name": "elms-api",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "dev": "node --use-system-ca --watch-path=src src/server.js",
+    "start": "node --use-system-ca src/server.js",
+    "reset-password": "node src/reset-password.js",
+    "migrate:postgres": "node src/migrate-sqlite-to-postgres.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "nodemailer": "^10.0.16",
+    "pg": "^8.23.1"
+  }
+}
