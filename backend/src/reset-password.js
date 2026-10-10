@@ -26,6 +26,5 @@ try{
   const salt=randomBytes(16).toString('hex'),passwordHash=(await scrypt(password,salt,64)).toString('hex');
   db.prepare('UPDATE users SET salt=?,password_hash=? WHERE id=?').run(salt,passwordHash,user.id);
   db.prepare('DELETE FROM sessions WHERE user_id=?').run(user.id);
-  console.log('Password updated. Sign in with the new password.');
 }catch(error){console.error(error.message);process.exitCode=1;}
 finally{db.close();}

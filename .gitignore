@@ -72,7 +72,8 @@ web_modules/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variable files
+# Local database and secrets
+backend/data/*.sqlite*
 .env
 .env.development.local
 .env.test.local
